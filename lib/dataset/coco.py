@@ -247,6 +247,9 @@ class COCODataset(JointsDataset):
             box = det_res['bbox']
             score = det_res['score']
 
+            # if img_name != 'data/coco/images/val2017/000000017905.jpg':
+            #     continue
+
             if score < self.image_thre:
                 continue
 

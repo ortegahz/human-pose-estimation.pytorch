@@ -108,6 +108,8 @@ def validate(config, val_loader, val_dataset, model, criterion, output_dir,
         for i, (input, target, target_weight, meta) in enumerate(val_loader):
             # compute output
             output = model(input)
+            # output_save = output.cpu().numpy()
+            # np.savetxt(os.path.join('/home/manu/tmp', 'output_save.txt'), output_save.flatten(), fmt="%f", delimiter="\n")
             if config.TEST.FLIP_TEST:
                 # this part is ugly, because pytorch has not supported negative index
                 # input_flipped = model(input[:, :, :, ::-1])

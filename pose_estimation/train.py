@@ -189,7 +189,7 @@ def main():
         save_checkpoint({
             'epoch': epoch + 1,
             'model': get_model_name(config),
-            'state_dict': model.state_dict(),
+            'state_dict': model.module.state_dict(),
             'perf': perf_indicator,
             'optimizer': optimizer.state_dict(),
         }, best_model, final_output_dir)

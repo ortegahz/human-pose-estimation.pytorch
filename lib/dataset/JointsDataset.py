@@ -79,6 +79,9 @@ class JointsDataset(Dataset):
             logger.error('=> fail to read {}'.format(image_file))
             raise ValueError('Fail to read {}'.format(image_file))
 
+        # if image_file == 'data/coco/images/val2017/000000017905.jpg':
+        #     logger.info('hello world !')
+
         joints = db_rec['joints_3d']
         joints_vis = db_rec['joints_3d_vis']
 
