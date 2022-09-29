@@ -33,35 +33,6 @@ import models
 
 from utils.transforms import get_affine_transform
 
-num_joints = 17  # coco
-image_width = 192
-image_height = 256
-aspect_ratio = image_width * 1.0 / image_height
-pixel_std = 200
-
-
-def _box2cs(box):
-    x, y, w, h = box[:4]
-    return _xywh2cs(x, y, w, h)
-
-
-def _xywh2cs(x, y, w, h):
-    center = np.zeros((2), dtype=np.float32)
-    center[0] = x + w * 0.5
-    center[1] = y + h * 0.5
-
-    if w > aspect_ratio * h:
-        h = w * 1.0 / aspect_ratio
-    elif w < aspect_ratio * h:
-        w = h * aspect_ratio
-    scale = np.array(
-        [w * 1.0 / pixel_std, h * 1.0 / pixel_std],
-        dtype=np.float32)
-    if center[0] != -1:
-        scale = scale * 1.25
-
-    return center, scale
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train keypoints network')
@@ -89,6 +60,19 @@ def parse_args():
     parser.add_argument('--model-file',
                         help='model state file',
                         type=str)
+    parser.add_argument('--image-file',
+                        help='image file',
+                        type=str)
+    parser.add_argument('--im-det',
+                        help='image detection [x, y, w, h, score]',
+                        type=str)
+    parser.add_argument('--pt-th',
+                        help='threshold of key pts ',
+                        type=float)
+    parser.add_argument('--pixel_std',
+                        help='pixel std',
+                        default=200,
+                        type=int)
     parser.add_argument('--use-detect-bbox',
                         help='use detect bbox',
                         action='store_true')
@@ -130,18 +114,46 @@ def reset_config(config, args):
 
 
 def main():
+    args = parse_args()
+    reset_config(config, args)
+
+    # /media/manu/samsung/pics/000000017905.jpg
     # {"bbox": [81.5511842832181, 233.66049769970982, 121.17168271594619, 351.7913157042058],
     # "category_id": 1, "image_id": 17905, "score": 0.9997398257255554}
-    image_file = '/media/manu/samsung/pics/000000017905.jpg'
-    box = [81.5511842832181, 233.66049769970982, 121.17168271594619, 351.7913157042058]
-    score = 0.9997398257255554
+    image_file = args.image_file
+    det = list(map(float, (args.im_det.split(','))))
+    box = det[:4]
+    score = det[-1]
 
-    th_pt = 0.5
+    pixel_std = args.pixel_std
+    th_pt = args.pt_th
+
+    image_width, image_height = config.MODEL.IMAGE_SIZE
+    aspect_ratio = image_width * 1.0 / image_height
+    num_joints = config.MODEL.NUM_JOINTS
 
     colours = np.random.rand(num_joints, 3) * 255
 
-    args = parse_args()
-    reset_config(config, args)
+    def _box2cs(box):
+        x, y, w, h = box[:4]
+        return _xywh2cs(x, y, w, h)
+
+    def _xywh2cs(x, y, w, h):
+        center = np.zeros((2), dtype=np.float32)
+        center[0] = x + w * 0.5
+        center[1] = y + h * 0.5
+
+        if w > aspect_ratio * h:
+            h = w * 1.0 / aspect_ratio
+        elif w < aspect_ratio * h:
+            w = h * aspect_ratio
+        scale = np.array(
+            [w * 1.0 / pixel_std, h * 1.0 / pixel_std],
+            dtype=np.float32)
+        if center[0] != -1:
+            scale = scale * 1.25
+
+        return center, scale
 
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'valid')
